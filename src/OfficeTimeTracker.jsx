@@ -530,17 +530,11 @@ export default function OfficeTimeTracker() {
               <Clock className="w-8 h-8 text-indigo-600" />
               <div>
                 <div className="text-xl md:text-2xl font-semibold">{formatFull(now)}</div>
-                <div className="text-sm text-gray-500">Office schedule: 9:30 AM - 5:30 PM • Required: 7h • Base Break: 60m</div>
+                <div className="text-sm text-gray-500"></div>
               </div>
             </div>
 
             <div className="flex gap-2">
-              <button onClick={() => exportCSV(false)} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">
-                Export Today
-              </button>
-              <button onClick={() => exportCSV(true)} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">
-                Export History
-              </button>
               <button onClick={clearToday} className="px-3 py-2 bg-yellow-50 rounded hover:bg-yellow-100">
                 Clear Today
               </button>
