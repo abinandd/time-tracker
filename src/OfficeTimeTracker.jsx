@@ -617,11 +617,6 @@ export default function OfficeTimeTracker() {
                   </div>
                 </div>
 
-                {earlyArrivalMinutes > 0 && (
-                  <div className="text-sm text-green-700">
-                    ⭐ Early by {formatDuration(earlyArrivalMinutes)} (added to break allowance)
-                  </div>
-                )}
               </div>
             </div>
 
