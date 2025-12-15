@@ -9,7 +9,6 @@ import {
   Check,
   Trash2,
   Timer,
-  CalendarDays,
   AlertTriangle,
   CheckCircle2,
   XCircle,
@@ -486,23 +485,12 @@ export default function OfficeTimeTracker() {
       <div className="max-w-4xl mx-auto stagger-children">
         {/* Header */}
         <div className="glass-card p-6 md:p-8 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                <Clock className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gradient">Time Tracker</h1>
-                <p className="text-sm text-[var(--text-secondary)]">{formatDateNice()}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className={`badge ${status.class}`}>
-                <StatusIcon className="w-3.5 h-3.5" />
-                {status.text}
-              </span>
-            </div>
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-sm text-[var(--text-secondary)]">{formatDateNice()}</p>
+            <span className={`badge ${status.class}`}>
+              <StatusIcon className="w-3.5 h-3.5" />
+              {status.text}
+            </span>
           </div>
 
           {/* Live Clock */}
@@ -536,7 +524,7 @@ export default function OfficeTimeTracker() {
               className="btn btn-warning"
             >
               <Coffee className="w-6 h-6 mb-1" />
-              <span>Break In</span>
+              <span>Start Break</span>
             </button>
 
             <button
@@ -545,7 +533,7 @@ export default function OfficeTimeTracker() {
               className="btn btn-primary"
             >
               <Coffee className="w-6 h-6 mb-1" />
-              <span>Break Out</span>
+              <span>End Break</span>
             </button>
           </div>
         </div>
@@ -741,30 +729,46 @@ export default function OfficeTimeTracker() {
           )}
         </div>
 
-        {/* Edit Modal */}
+        {/* Edit Modal Popup */}
         {editMode && (
-          <div className="glass-card p-6 mb-6 animate-fadeIn">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">Edit Time</h3>
-              <button onClick={cancelEdit} className="icon-btn">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+          <div className="modal-overlay" onClick={cancelEdit}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-[var(--text-primary)]">Edit Time</h3>
+                  <p className="text-sm text-[var(--text-muted)] mt-1">
+                    {editMode.type === 'punchIn' && 'Punch In Time'}
+                    {editMode.type === 'punchOut' && 'Punch Out Time'}
+                    {editMode.type === 'break' && `Break ${editMode.index + 1} - ${editMode.field === 'start' ? 'Start' : 'End'} Time`}
+                  </p>
+                </div>
+                <button onClick={cancelEdit} className="modal-close-btn">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-            <div className="flex items-center gap-3">
-              <input
-                type="time"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                className="flex-1 px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg font-mono text-lg focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-glow)]"
-              />
-              <button onClick={saveEdit} className="btn btn-success py-2 px-4 flex-row gap-2">
-                <Check className="w-5 h-5" />
-                <span>Save</span>
-              </button>
-              <button onClick={cancelEdit} className="clear-btn">
-                Cancel
-              </button>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                  Select Time
+                </label>
+                <input
+                  type="time"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  autoFocus
+                  className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl font-mono text-2xl text-center focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-glow)] transition-all"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={cancelEdit} className="flex-1 px-4 py-3 rounded-xl border border-[var(--border)] text-[var(--text-secondary)] font-medium hover:bg-[var(--bg-card)] transition-all">
+                  Cancel
+                </button>
+                <button onClick={saveEdit} className="flex-1 btn btn-success py-3 flex-row gap-2">
+                  <Check className="w-5 h-5" />
+                  <span>Save Changes</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -818,43 +822,6 @@ export default function OfficeTimeTracker() {
           </div>
         )}
 
-        {/* History */}
-        <div className="glass-card p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-title flex items-center gap-2 mb-0">
-              <CalendarDays className="w-4 h-4" />
-              History
-            </h3>
-            <span className="text-sm text-[var(--text-muted)]">{history.length} days</span>
-          </div>
-
-          {history.length === 0 ? (
-            <div className="text-center py-8 text-[var(--text-muted)]">
-              <CalendarDays className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>No archived days yet</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {history.slice(-7).reverse().map((h, i) => (
-                <div key={i} className="history-item">
-                  <div>
-                    <div className="font-medium">{h.date}</div>
-                    <div className="text-sm text-[var(--text-muted)] font-mono">
-                      {h.punchIn ? formatShort(h.punchIn) : '--:--'} → {h.punchOut ? formatShort(h.punchOut) : '--:--'}
-                    </div>
-                  </div>
-                  <div className={`font-mono font-bold ${
-                    h.summary && h.summary.totalWork >= REQUIRED_WORK_HOURS * 60 
-                      ? 'text-[var(--success)]' 
-                      : 'text-[var(--danger)]'
-                  }`}>
-                    {h.summary ? formatDuration(h.summary.totalWork) : '—'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Footer Actions */}
         <div className="flex justify-center gap-3">
