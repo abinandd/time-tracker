@@ -470,6 +470,13 @@ export default function OfficeTimeTracker() {
     return { officeMinutesSoFar, breakSoFar, workSoFar, remaining, estimatedEnd };
   })();
 
+  const expectedBreakEndTime = (() => {
+    if (!onBreak || !breakStart) return null;
+    const committed = breaks.reduce((s, b) => s + (b.minutes || 0), 0);
+    const budgetAtStart = totalAllowedBreak - committed;
+    return new Date(breakStart.getTime() + budgetAtStart * 60000);
+  })();
+
   const getStatusBadge = () => {
     if (punchOut) return { text: 'Day Complete', class: 'badge-success', icon: CheckCircle2 };
     if (onBreak) return { text: 'On Break', class: 'badge-warning', icon: Coffee };
@@ -621,9 +628,17 @@ export default function OfficeTimeTracker() {
 
               {onBreak && (
                 <div className="mt-3 p-3 rounded-lg bg-[var(--warning)]/10 border border-[var(--warning)]/20">
-                  <div className="flex items-center gap-2 text-[var(--warning)]">
-                    <Timer className="w-4 h-4 animate-pulse" />
-                    <span className="text-sm font-medium">On break since {formatShort(breakStart)}</span>
+                  <div className="flex items-center gap-3 text-[var(--warning)]">
+                    <Timer className="w-5 h-5 animate-pulse shrink-0" />
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-semibold">On break since {formatShort(breakStart)}</span>
+                      {expectedBreakEndTime && (
+                        <div className="flex items-center gap-1.5 text-xs font-medium opacity-90">
+                          <Clock className="w-3 h-3" />
+                          <span>Expected end: {formatShort(expectedBreakEndTime)}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
