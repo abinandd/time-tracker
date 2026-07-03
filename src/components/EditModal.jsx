@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { TimeClock } from '@mui/x-date-pickers/TimeClock';
 import { ThemeProvider } from '@mui/material/styles';
 import dayjs from 'dayjs';
+import { gsap } from 'gsap';
 
 export default function EditModal({
   editMode,
@@ -19,11 +20,25 @@ export default function EditModal({
   formatSelectedTime,
   muiDarkTheme,
 }) {
+  const overlayRef = useRef(null);
+  const contentRef = useRef(null);
+
+  useEffect(() => {
+    if (editMode && overlayRef.current && contentRef.current) {
+      gsap.fromTo(overlayRef.current, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: 'power2.out' });
+      gsap.fromTo(
+        contentRef.current,
+        { scale: 0.9, opacity: 0, y: 10 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.3, ease: 'back.out(1.5)', delay: 0.05 }
+      );
+    }
+  }, [editMode]);
+
   if (!editMode) return null;
 
   return (
-    <div className="modal-overlay" onClick={cancelEdit}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={cancelEdit} ref={overlayRef}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} ref={contentRef}>
         
         {/* Selected Time Display */}
         <div className="text-3xl font-bold font-mono text-[var(--success)] text-center tracking-tight select-none">

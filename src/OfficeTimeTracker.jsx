@@ -678,6 +678,9 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
               expectedBreakEndTime={expectedBreakEndTime}
               beginEdit={beginEdit}
               deleteBreak={deleteBreak}
+              totalAllowedBreak={totalAllowedBreak}
+              totalBreakUsed={totalBreakUsed}
+              breakRemainingMinutes={breakRemainingMinutes}
             />
 
             {/* Work Progress */}

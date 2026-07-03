@@ -11,8 +11,12 @@ export default function BreakSessions({
   expectedBreakEndTime,
   beginEdit,
   deleteBreak,
+  totalAllowedBreak,
+  totalBreakUsed,
+  breakRemainingMinutes,
 }) {
   const listRef = useRef(null);
+  const activeBreakRef = useRef(null);
   const prevCount = useRef(breaks.length);
 
   useEffect(() => {
@@ -28,6 +32,19 @@ export default function BreakSessions({
     prevCount.current = breaks.length;
   }, [breaks.length]);
 
+  useEffect(() => {
+    if (onBreak && activeBreakRef.current) {
+      gsap.fromTo(
+        activeBreakRef.current,
+        { opacity: 0, y: -10, height: 0, overflow: 'hidden' },
+        { opacity: 1, y: 0, height: 'auto', duration: 0.4, ease: 'power2.out' }
+      );
+    }
+  }, [onBreak]);
+
+  const currentBreakMinutes = onBreak ? minutesBetween(breakStart, now) : 0;
+  const currentTotalUsed = totalBreakUsed + currentBreakMinutes;
+
   return (
     <div className="glass-card mb-6 gsap-section">
       <div className="flex items-center justify-between mb-4">
@@ -37,22 +54,38 @@ export default function BreakSessions({
       </div>
 
       {onBreak && (
-        <div className="mb-4 p-3 rounded-md bg-[var(--warning)]/10 border border-[var(--warning)]/20">
-          <div className="flex items-center gap-3 text-[var(--warning)]">
-            <Timer className="w-5 h-5 animate-pulse shrink-0" />
-            <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-semibold">On break since {formatShort(breakStart)}</span>
-                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-[var(--warning)]/20 text-[var(--warning)] font-bold">
-                  {formatDuration(minutesBetween(breakStart, now))}
-                </span>
+        <div className="mb-4 p-4 rounded-lg bg-[var(--warning)]/10 border border-[var(--warning)]/20" ref={activeBreakRef}>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-[var(--warning)] uppercase tracking-wider">Active Break</span>
+              <span className="text-sm font-mono px-2 py-0.5 rounded-full bg-[var(--warning)]/20 text-[var(--warning)] font-bold shadow-sm">
+                {formatDuration(currentBreakMinutes)}
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs border-t border-[var(--warning)]/10 pt-3 mt-1">
+              <div className="flex flex-col">
+                <span className="text-[var(--text-muted)] text-[10px] uppercase mb-0.5">Started</span>
+                <span className="font-mono font-medium text-[var(--text-primary)]">{formatShort(breakStart)}</span>
               </div>
               {expectedBreakEndTime && (
-                <div className="flex items-center gap-1.5 text-xs font-medium opacity-90">
-                  <Clock className="w-3 h-3" />
-                  <span>Expected end: {formatShort(expectedBreakEndTime)}</span>
+                <div className="flex flex-col">
+                  <span className="text-[var(--text-muted)] text-[10px] uppercase mb-0.5">Expected End</span>
+                  <span className="font-mono font-medium text-[var(--text-primary)]">{formatShort(expectedBreakEndTime)}</span>
                 </div>
               )}
+              <div className="flex flex-col">
+                <span className="text-[var(--text-muted)] text-[10px] uppercase mb-0.5">Total Used</span>
+                <span className={`font-mono font-medium ${currentTotalUsed > totalAllowedBreak ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
+                  {formatDuration(currentTotalUsed)}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[var(--text-muted)] text-[10px] uppercase mb-0.5">Remaining</span>
+                <span className={`font-mono font-medium ${breakRemainingMinutes <= 0 ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
+                  {formatDuration(breakRemainingMinutes)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
