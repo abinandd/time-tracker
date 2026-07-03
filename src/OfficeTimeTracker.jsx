@@ -636,15 +636,23 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
       <div className="max-w-4xl mx-auto flex-1 flex flex-col justify-between w-full">
         <div className="w-full">
           {/* Header */}
-          <ActionButtons
-            punchIn={punchIn}
-            punchOut={punchOut}
-            onBreak={onBreak}
-            onPunchIn={handlePunchIn}
-            onPunchOut={handlePunchOut}
-            onBreakIn={handleBreakIn}
-            onBreakOut={handleBreakOut}
-          />
+          <div
+            className="transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] w-full"
+            style={{
+              transform: !punchIn ? 'translateY(25vh)' : 'translateY(0)',
+              opacity: 1
+            }}
+          >
+            <ActionButtons
+              punchIn={punchIn}
+              punchOut={punchOut}
+              onBreak={onBreak}
+              onPunchIn={handlePunchIn}
+              onPunchOut={handlePunchOut}
+              onBreakIn={handleBreakIn}
+              onBreakOut={handleBreakOut}
+            />
+          </div>
 
         {/* Only show details after punch in */}
         {punchIn && (
