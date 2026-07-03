@@ -57,32 +57,32 @@ export default function BreakSessions({
         <div className="mb-4 p-4 rounded-lg bg-[var(--warning)]/10 border border-[var(--warning)]/20" ref={activeBreakRef}>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-[var(--warning)] uppercase tracking-wider">Active Break</span>
-              <span className="text-sm font-mono px-2 py-0.5 rounded-full bg-[var(--warning)]/20 text-[var(--warning)] font-bold shadow-sm">
+              <span className="text-[11px] font-bold text-[var(--warning)] tracking-wide">Active Break</span>
+              <span className="text-sm font-medium px-2 py-0.5 rounded-full bg-[var(--warning)]/20 text-[var(--warning)] shadow-sm">
                 {formatDuration(currentBreakMinutes)}
               </span>
             </div>
             
-            <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs border-t border-[var(--warning)]/10 pt-3 mt-1">
+            <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs border-t border-[var(--warning)]/15 pt-3 mt-1">
               <div className="flex flex-col">
-                <span className="text-[var(--text-muted)] text-[10px] uppercase mb-0.5">Started</span>
-                <span className="font-mono font-medium text-[var(--text-primary)]">{formatShort(breakStart)}</span>
+                <span className="text-[var(--text-muted)] text-[10.5px] font-medium mb-0.5">Started</span>
+                <span className="font-medium text-[var(--text-primary)]">{formatShort(breakStart)}</span>
               </div>
               {expectedBreakEndTime && (
                 <div className="flex flex-col">
-                  <span className="text-[var(--text-muted)] text-[10px] uppercase mb-0.5">Expected End</span>
-                  <span className="font-mono font-medium text-[var(--text-primary)]">{formatShort(expectedBreakEndTime)}</span>
+                  <span className="text-[var(--text-muted)] text-[10.5px] font-medium mb-0.5">Expected End</span>
+                  <span className="font-medium text-[var(--text-primary)]">{formatShort(expectedBreakEndTime)}</span>
                 </div>
               )}
               <div className="flex flex-col">
-                <span className="text-[var(--text-muted)] text-[10px] uppercase mb-0.5">Total Used</span>
-                <span className={`font-mono font-medium ${currentTotalUsed > totalAllowedBreak ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
+                <span className="text-[var(--text-muted)] text-[10.5px] font-medium mb-0.5">Total Used</span>
+                <span className={`font-medium ${currentTotalUsed > totalAllowedBreak ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
                   {formatDuration(currentTotalUsed)}
                 </span>
               </div>
               <div className="flex flex-col">
-                <span className="text-[var(--text-muted)] text-[10px] uppercase mb-0.5">Remaining</span>
-                <span className={`font-mono font-medium ${breakRemainingMinutes <= 0 ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
+                <span className="text-[var(--text-muted)] text-[10.5px] font-medium mb-0.5">Remaining</span>
+                <span className={`font-medium ${breakRemainingMinutes <= 0 ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
                   {formatDuration(breakRemainingMinutes)}
                 </span>
               </div>

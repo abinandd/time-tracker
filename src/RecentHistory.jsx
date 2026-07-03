@@ -76,7 +76,7 @@ export default function RecentHistory({ onBack }) {
         {/* Empty State */}
         {history.length === 0 ? (
           <div className="text-center py-12 text-[var(--text-muted)]">
-            <h3 className="text-lg font-medium text-[var(--text-secondary)] mb-2 uppercase tracking-wider">No History</h3>
+            <h3 className="text-lg font-medium text-[var(--text-secondary)] mb-2 tracking-wider">No History</h3>
             <p className="text-sm">Your completed work days will appear here.</p>
           </div>
         ) : (
@@ -99,7 +99,7 @@ export default function RecentHistory({ onBack }) {
                   {/* Summary Grid */}
                   <div className="grid grid-cols-2 gap-y-6 gap-x-4 mb-6">
                     <div className="flex flex-col items-start whitespace-nowrap">
-                      <span className="text-[var(--text-secondary)] text-xs mb-1 uppercase tracking-wider">Punch In</span>
+                      <span className="text-[var(--text-secondary)] text-xs mb-1 tracking-wider">Punch In</span>
                       <div className="flex items-center min-h-[28px]">
                         <span className="font-mono text-lg font-semibold text-[var(--text-primary)]">
                           {formatShort(recPunchIn)}
@@ -108,7 +108,7 @@ export default function RecentHistory({ onBack }) {
                     </div>
 
                     <div className="flex flex-col items-start whitespace-nowrap">
-                      <span className="text-[var(--text-secondary)] text-xs mb-1 uppercase tracking-wider">Punch Out</span>
+                      <span className="text-[var(--text-secondary)] text-xs mb-1 tracking-wider">Punch Out</span>
                       <div className="flex items-center min-h-[28px]">
                         <span className="font-mono text-lg font-semibold text-[var(--text-primary)]">
                           {formatShort(recPunchOut)}
@@ -117,7 +117,7 @@ export default function RecentHistory({ onBack }) {
                     </div>
 
                     <div className="flex flex-col items-start whitespace-nowrap">
-                      <span className="text-[var(--text-secondary)] text-xs mb-1 uppercase tracking-wider">Break Time</span>
+                      <span className="text-[var(--text-secondary)] text-xs mb-1 tracking-wider">Break Time</span>
                       <div className="flex items-center min-h-[28px]">
                         <span className="font-mono text-lg font-semibold text-[var(--warning)]">
                           {s ? formatDuration(s.breakMinutes) : '--'}
@@ -126,7 +126,7 @@ export default function RecentHistory({ onBack }) {
                     </div>
 
                     <div className="flex flex-col items-start whitespace-nowrap">
-                      <span className="text-[var(--text-secondary)] text-xs mb-1 uppercase tracking-wider">Work Time</span>
+                      <span className="text-[var(--text-secondary)] text-xs mb-1 tracking-wider">Work Time</span>
                       <div className="flex items-center min-h-[28px]">
                         <span className={`font-mono text-lg font-semibold ${isComplete ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
                           {s ? formatDuration(s.totalWork) : '--'}
@@ -138,7 +138,7 @@ export default function RecentHistory({ onBack }) {
                   {/* Breaks */}
                   {recBreaks.length > 0 && (
                     <div>
-                      <h3 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
+                      <h3 className="text-xs font-semibold text-[var(--text-secondary)] tracking-wider mb-2">
                         Break Sessions
                       </h3>
                       <div className="space-y-1">
