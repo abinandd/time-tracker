@@ -308,10 +308,6 @@ export default function OfficeTimeTracker() {
       alert('Already on break');
       return;
     }
-    if (totalBreakUsed >= totalAllowedBreak) {
-      alert(`No break remaining. Total allowed: ${formatDuration(totalAllowedBreak)}`);
-      return;
-    }
     setOnBreak(true);
     setBreakStart(new Date());
   };
