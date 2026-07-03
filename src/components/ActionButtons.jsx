@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { LogIn, LogOut, Coffee } from 'lucide-react';
 import { gsap } from 'gsap';
 
@@ -11,19 +11,6 @@ export default function ActionButtons({
   onBreakIn,
   onBreakOut,
 }) {
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    
-    // Staggered entrance animation
-    const buttons = containerRef.current.querySelectorAll('button');
-    gsap.fromTo(
-      buttons,
-      { y: 20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: 'power3.out', delay: 0.1 }
-    );
-  }, []);
 
   const handleMouseEnter = (e) => {
     if (!e.currentTarget.disabled) {
@@ -50,7 +37,7 @@ export default function ActionButtons({
   };
 
   return (
-    <div className="glass-card mb-6" ref={containerRef}>
+    <div className="glass-card mb-6 gsap-section">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <button
           onClick={onPunchIn}

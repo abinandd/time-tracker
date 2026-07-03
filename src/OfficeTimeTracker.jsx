@@ -604,15 +604,32 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
   const StatusIcon = status.icon;
 
   const pageRef = useRef(null);
+  const hasAnimated = useRef(false);
 
   useEffect(() => {
     if (!pageRef.current) return;
-    gsap.fromTo(
-      pageRef.current,
-      { opacity: 0 },
-      { opacity: 1, duration: 0.5, ease: 'power2.out' }
-    );
-  }, []);
+
+    // Use rAF to wait for DOM to paint
+    requestAnimationFrame(() => {
+      const sections = pageRef.current?.querySelectorAll('.gsap-section');
+      if (!sections || sections.length === 0) return;
+
+      gsap.set(sections, { y: 40, opacity: 0 });
+
+      const tl = gsap.timeline();
+      sections.forEach((section, i) => {
+        tl.to(section, {
+          y: 0,
+          opacity: 1,
+          duration: 0.6,
+          ease: 'power3.out',
+        }, i * 0.12);
+      });
+
+      hasAnimated.current = true;
+      return () => tl.kill();
+    });
+  }, [!!punchIn]);
 
   return (
     <div className="min-h-screen bg-pattern p-4 md:p-6 flex flex-col" ref={pageRef}>
@@ -629,46 +646,48 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
             onBreakOut={handleBreakOut}
           />
 
-        {/* Unified Status Card */}
-        <StatusCard
-          punchIn={punchIn}
-          punchOut={punchOut}
-          totalAllowedBreak={totalAllowedBreak}
-          totalBreakUsed={totalBreakUsed}
-          isBreakExceeded={isBreakExceeded}
-          breakRemainingMinutes={breakRemainingMinutes}
-          exceededMinutes={exceededMinutes}
-          beginEdit={beginEdit}
-        />
+        {/* Only show details after punch in */}
+        {punchIn && (
+          <>
+            {/* Unified Status Card */}
+            <StatusCard
+              punchIn={punchIn}
+              punchOut={punchOut}
+              totalAllowedBreak={totalAllowedBreak}
+              totalBreakUsed={totalBreakUsed}
+              isBreakExceeded={isBreakExceeded}
+              breakRemainingMinutes={breakRemainingMinutes}
+              exceededMinutes={exceededMinutes}
+              beginEdit={beginEdit}
+            />
 
-        {/* Break Sessions */}
-        <BreakSessions
-          breaks={breaks}
-          onBreak={onBreak}
-          breakStart={breakStart}
-          now={now}
-          expectedBreakEndTime={expectedBreakEndTime}
-          beginEdit={beginEdit}
-          deleteBreak={deleteBreak}
-        />
+            {/* Break Sessions */}
+            <BreakSessions
+              breaks={breaks}
+              onBreak={onBreak}
+              breakStart={breakStart}
+              now={now}
+              expectedBreakEndTime={expectedBreakEndTime}
+              beginEdit={beginEdit}
+              deleteBreak={deleteBreak}
+            />
 
-        {/* Work Progress */}
-        <WorkProgress remainingCalc={remainingCalc} requiredMinutes={REQUIRED_WORK_HOURS * 60} />
+            {/* Work Progress */}
+            <WorkProgress remainingCalc={remainingCalc} requiredMinutes={REQUIRED_WORK_HOURS * 60} />
 
-        {/* Day Summary */}
-        <DaySummary
-          summary={summary}
-          totalAllowedBreak={totalAllowedBreak}
-          requiredWorkHours={REQUIRED_WORK_HOURS}
-        />
-
-
-
+            {/* Day Summary */}
+            <DaySummary
+              summary={summary}
+              totalAllowedBreak={totalAllowedBreak}
+              requiredWorkHours={REQUIRED_WORK_HOURS}
+            />
+          </>
+        )}
 
         </div>
 
         {/* Footer Actions */}
-        <div className="flex justify-center gap-3 mt-6">
+        <div className="flex justify-center gap-3 mt-6 gsap-section">
           {onNavigateHistory && (
             <button
               onClick={onNavigateHistory}

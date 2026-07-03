@@ -12,31 +12,24 @@ export default function BreakSessions({
   beginEdit,
   deleteBreak,
 }) {
-  const cardRef = useRef(null);
   const listRef = useRef(null);
-
-  useEffect(() => {
-    if (!cardRef.current) return;
-    gsap.fromTo(
-      cardRef.current,
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', delay: 0.35 }
-    );
-  }, []);
+  const prevCount = useRef(breaks.length);
 
   useEffect(() => {
     if (!listRef.current) return;
-    const items = listRef.current.querySelectorAll('.break-item');
-    if (items.length === 0) return;
-    gsap.fromTo(
-      items,
-      { x: -15, opacity: 0 },
-      { x: 0, opacity: 1, duration: 0.4, stagger: 0.06, ease: 'power2.out' }
-    );
+    // Only animate newly added items
+    if (breaks.length > prevCount.current) {
+      const items = listRef.current.querySelectorAll('.break-item');
+      const lastItem = items[items.length - 1];
+      if (lastItem) {
+        gsap.fromTo(lastItem, { x: -10, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3, ease: 'power2.out' });
+      }
+    }
+    prevCount.current = breaks.length;
   }, [breaks.length]);
 
   return (
-    <div className="glass-card mb-6" ref={cardRef}>
+    <div className="glass-card mb-6 gsap-section">
       <div className="flex items-center justify-between mb-4">
         <h3 className="section-title mb-0 flex items-center gap-2">
           Break Sessions
@@ -67,9 +60,9 @@ export default function BreakSessions({
 
       {breaks.length === 0 ? (
         onBreak ? null : (
-          <div className="text-center py-8 text-[var(--text-muted)]">
-            <Coffee className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>No breaks recorded yet</p>
+          <div className="text-center py-6 text-[var(--text-muted)]">
+            <Coffee className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <p className="text-xs">No breaks recorded yet</p>
           </div>
         )
       ) : (

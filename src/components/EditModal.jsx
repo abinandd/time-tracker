@@ -82,7 +82,7 @@ export default function EditModal({
         <ThemeProvider theme={muiDarkTheme}>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <TimeClock
-              ampm={false}
+              ampm={true}
               views={['hours', 'minutes']}
               view={pickerTab === 'hour' ? 'hours' : 'minutes'}
               onViewChange={(newView) => setPickerTab(newView === 'hours' ? 'hour' : 'minute')}
@@ -105,18 +105,18 @@ export default function EditModal({
         </ThemeProvider>
 
         {/* Action buttons */}
-        <div className="flex gap-2 justify-center mt-4 w-full max-w-[200px]">
+        <div className="flex gap-3 justify-center mt-4 w-full max-w-[240px]">
           <button
             type="button"
             onClick={cancelEdit}
-            className="flex-1 py-1 text-[11px] rounded-full border border-[var(--border)] text-[var(--text-secondary)] font-medium hover:bg-[var(--bg-card)] transition-all cursor-pointer text-center bg-transparent"
+            className="flex-1 py-2 text-xs rounded-full border border-[var(--border)] text-[var(--text-secondary)] font-medium hover:bg-[var(--bg-card)] transition-all cursor-pointer text-center bg-transparent"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={saveEdit}
-            className="flex-1 py-1 text-[11px] rounded-full bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.2)] text-[#10b981] font-medium hover:bg-[rgba(16,185,129,0.15)] hover:border-[rgba(16,185,129,0.4)] hover:text-[#34d399] transition-all cursor-pointer text-center"
+            className="flex-1 py-2 text-xs rounded-full bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.2)] text-[#10b981] font-medium hover:bg-[rgba(16,185,129,0.15)] hover:border-[rgba(16,185,129,0.4)] hover:text-[#34d399] transition-all cursor-pointer text-center"
           >
             Confirm
           </button>
