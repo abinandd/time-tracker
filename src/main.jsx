@@ -1,9 +1,9 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import OfficeTimeTracker from "./OfficeTimeTracker";
+import App from "./App";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <OfficeTimeTracker />
+    <App />
   </StrictMode>
 );

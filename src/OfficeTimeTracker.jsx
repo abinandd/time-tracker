@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import { gsap } from 'gsap';
 import {
   Clock,
   Coffee,
@@ -13,7 +14,38 @@ import {
   CheckCircle2,
   XCircle,
   Sparkles,
+  History,
 } from 'lucide-react';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { TimeClock } from '@mui/x-date-pickers/TimeClock';
+import dayjs from 'dayjs';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import ActionButtons from './components/ActionButtons';
+import BreakSessions from './components/BreakSessions';
+import WorkProgress from './components/WorkProgress';
+import DaySummary from './components/DaySummary';
+import StatusCard from './components/StatusCard';
+import ConfirmModal from './components/ConfirmModal';
+import EditModal from './components/EditModal';
+import { useToast, ToastContainer } from './components/Toast';
+
+const muiDarkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#10b981',
+    },
+    background: {
+      paper: 'transparent',
+      default: 'transparent',
+    },
+    text: {
+      primary: '#f4f4f5',
+      secondary: '#a1a1aa',
+    },
+  },
+});
 
 /**
  * OfficeTimeTracker.jsx
@@ -41,43 +73,25 @@ const DATE_KEY = 'office-tracker-date-v2';
 const OFFICE_START = { hours: 9, minutes: 30 };
 const BASE_BREAK_MINUTES = 60;
 const REQUIRED_WORK_HOURS = 7;
+const MAX_HISTORY_DAYS = 2;
 
-/* =========================
-   UTILITIES
-   ========================= */
-const iso = (d) => (d ? new Date(d).toISOString() : null);
-const fromIso = (s) => (s ? new Date(s) : null);
-
-const minutesBetween = (a, b) => Math.max(0, Math.floor((b - a) / (1000 * 60)));
-
-const formatShort = (d) =>
-  d ? new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--';
-
-const formatFull = (d) =>
-  d ? new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) : '--:--';
-
-const formatDuration = (minutes) => {
-  const hrs = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hrs > 0) return `${hrs}h ${mins}m`;
-  return `${mins}m`;
-};
-
-const todayDateString = () => new Date().toDateString();
-
-const formatDateNice = () => {
-  return new Date().toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    month: 'short', 
-    day: 'numeric' 
-  });
-};
+import { 
+  iso, 
+  fromIso, 
+  minutesBetween, 
+  formatShort, 
+  formatFull, 
+  formatDuration, 
+  todayDateString, 
+  formatDateNice 
+} from './utils';
 
 /* =========================
    COMPONENT
    ========================= */
-export default function OfficeTimeTracker() {
+export default function OfficeTimeTracker({ onNavigateHistory }) {
   const [now, setNow] = useState(new Date());
+  const toast = useToast();
 
   const [punchIn, setPunchIn] = useState(null);
   const [punchOut, setPunchOut] = useState(null);
@@ -87,6 +101,27 @@ export default function OfficeTimeTracker() {
 
   const [editMode, setEditMode] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [confirmAction, setConfirmAction] = useState(null);
+
+  const [pickerHour, setPickerHour] = useState(12);
+  const [pickerMinute, setPickerMinute] = useState(0);
+  const [pickerPeriod, setPickerPeriod] = useState('AM');
+  const [pickerTab, setPickerTab] = useState('hour');
+
+  useEffect(() => {
+    if (editValue && editValue.includes(':')) {
+      const [hh, mm] = editValue.split(':').map(Number);
+      if (!isNaN(hh) && !isNaN(mm)) {
+        const h12 = hh % 12 === 0 ? 12 : hh % 12;
+        const period = hh >= 12 ? 'PM' : 'AM';
+        if (h12 !== pickerHour || mm !== pickerMinute || period !== pickerPeriod) {
+          setPickerHour(h12);
+          setPickerMinute(mm);
+          setPickerPeriod(period);
+        }
+      }
+    }
+  }, [editValue, pickerHour, pickerMinute, pickerPeriod]);
 
   const [summary, setSummary] = useState(null);
   const [history, setHistory] = useState([]);
@@ -117,7 +152,9 @@ export default function OfficeTimeTracker() {
       }
 
       const hist = localStorage.getItem(HISTORY_KEY);
-      if (hist) setHistory(JSON.parse(hist));
+      if (hist) {
+        setHistory(JSON.parse(hist));
+      }
 
       const savedDate = localStorage.getItem(DATE_KEY);
       const today = todayDateString();
@@ -125,13 +162,19 @@ export default function OfficeTimeTracker() {
       if (!savedDate) {
         localStorage.setItem(DATE_KEY, today);
       } else if (savedDate !== today) {
-        archiveAndResetIfNeeded(savedDate);
+        // Defer archive to next tick so state from above has committed
+        setTimeout(() => {
+          archiveAndResetIfNeeded(savedDate);
+        }, 0);
       }
     } catch (err) {
       console.error('Error loading storage', err);
     } finally {
-      initedRef.current = true;
-      recalcSummary();
+      // Defer setting initedRef so auto-save doesn't fire on initial load with empty state
+      setTimeout(() => {
+        initedRef.current = true;
+        recalcSummary();
+      }, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -159,8 +202,21 @@ export default function OfficeTimeTracker() {
     };
     const id = setInterval(check, 60 * 1000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /* -------------------------
+     Disable page scroll when time editor modal is open
+     ------------------------- */
+  useEffect(() => {
+    if (editMode) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [editMode]);
 
   /* -------------------------
      Save current state to localStorage
@@ -194,7 +250,7 @@ export default function OfficeTimeTracker() {
           breaks: breaks.map((b) => ({ start: iso(b.start), end: iso(b.end), minutes: b.minutes })),
           summary: computeSummaryObject(punchIn, punchOut, breaks),
         };
-        const newHist = [...history, record];
+        const newHist = [...history, record].slice(-MAX_HISTORY_DAYS);
         setHistory(newHist);
         localStorage.setItem(HISTORY_KEY, JSON.stringify(newHist));
       }
@@ -279,11 +335,11 @@ export default function OfficeTimeTracker() {
 
   const handlePunchOut = () => {
     if (!punchIn) {
-      alert('Punch in first');
+      toast.show('Punch in first');
       return;
     }
     if (onBreak) {
-      alert('End break before punching out');
+      toast.show('End break before punching out', 'warning');
       return;
     }
 
@@ -297,24 +353,25 @@ export default function OfficeTimeTracker() {
 
   const handleBreakIn = () => {
     if (!punchIn) {
-      alert('Punch in first');
+      toast.show('Punch in first');
       return;
     }
     if (punchOut) {
-      alert('Already punched out for the day');
+      toast.show('Already punched out for the day');
       return;
     }
     if (onBreak) {
-      alert('Already on break');
+      toast.show('Already on break', 'warning');
       return;
     }
     setOnBreak(true);
-    setBreakStart(new Date());
+    const start = new Date();
+    setBreakStart(start);
   };
 
   const handleBreakOut = () => {
     if (!onBreak || !breakStart) {
-      alert('Not currently on a break');
+      toast.show('Not currently on a break');
       return;
     }
     const end = new Date();
@@ -326,7 +383,7 @@ export default function OfficeTimeTracker() {
     const willExceed = totalAfterBreak > totalAllowedBreak;
     const exceededBy = totalAfterBreak - totalAllowedBreak;
 
-    // Allow the break to be submitted even if exceeded, but show warning
+    // Allow the break to be submitted even if exceeded, but show warning confirm
     if (willExceed) {
       const confirmSubmit = window.confirm(
         `⚠️ Break limit exceeded by ${formatDuration(exceededBy)}!\n\n` +
@@ -352,6 +409,7 @@ export default function OfficeTimeTracker() {
      ------------------------- */
   const beginEdit = (payload) => {
     setEditMode(payload);
+    setPickerTab('hour');
     if (payload.type === 'punchIn' && punchIn) setEditValue(formatTimeForInput(punchIn));
     else if (payload.type === 'punchOut' && punchOut) setEditValue(formatTimeForInput(punchOut));
     else if (payload.type === 'break' && typeof payload.index === 'number') {
@@ -415,40 +473,102 @@ export default function OfficeTimeTracker() {
     cancelEdit();
   };
 
+  const getDayjsValue = () => {
+    if (!editValue) return dayjs();
+    const [hh, mm] = editValue.split(':').map(Number);
+    if (isNaN(hh) || isNaN(mm)) return dayjs();
+    return dayjs().hour(hh).minute(mm).second(0).millisecond(0);
+  };
+
+  const togglePeriod = (targetPeriod) => {
+    if (!editValue) return;
+    const [hhStr, mmStr] = editValue.split(':');
+    let hh = parseInt(hhStr, 10);
+    const currentPeriod = hh >= 12 ? 'PM' : 'AM';
+    if (currentPeriod === targetPeriod) return;
+
+    if (targetPeriod === 'AM') {
+      hh = hh - 12;
+    } else {
+      hh = hh + 12;
+    }
+    setEditValue(`${String(hh).padStart(2, '0')}:${mmStr}`);
+  };
+
+  const formatSelectedTime = (val) => {
+    if (!val) return '';
+    const [hhStr, mmStr] = val.split(':');
+    const hh = parseInt(hhStr, 10);
+    const mm = parseInt(mmStr, 10);
+    if (isNaN(hh) || isNaN(mm)) return '';
+    const period = hh >= 12 ? 'PM' : 'AM';
+    const displayHour = hh % 12 === 0 ? 12 : hh % 12;
+    return `${String(displayHour).padStart(2, '0')}:${String(mm).padStart(2, '0')} ${period}`;
+  };
+
+  const requestConfirm = (title, message, onConfirm, isDanger = false) => {
+    setConfirmAction({
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmAction(null);
+      },
+      isDanger
+    });
+  };
+
   /* -------------------------
      Delete break session
      ------------------------- */
   const deleteBreak = (index) => {
-    if (!window.confirm('Delete this break session?')) return;
-    setBreaks((prev) => prev.filter((_, i) => i !== index));
+    requestConfirm(
+      'Delete Session',
+      'Are you sure you want to delete this break session?',
+      () => {
+        setBreaks((prev) => prev.filter((_, i) => i !== index));
+      },
+      true
+    );
   };
 
   /* -------------------------
      Clear / Reset functions
      ------------------------- */
   const clearToday = () => {
-    if (!window.confirm('Clear today data? This will not remove history.')) return;
-    setPunchIn(null);
-    setPunchOut(null);
-    setBreaks([]);
-    setOnBreak(false);
-    setBreakStart(null);
-    setSummary(null);
-    localStorage.removeItem(STORAGE_KEY);
+    requestConfirm(
+      'Reset Today',
+      'Clear all punch times and break sessions for today? (This will not delete history)',
+      () => {
+        setPunchIn(null);
+        setPunchOut(null);
+        setBreaks([]);
+        setOnBreak(false);
+        setBreakStart(null);
+        setSummary(null);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    );
   };
 
   const clearAll = () => {
-    if (!window.confirm('Clear ALL data and history?')) return;
-    setPunchIn(null);
-    setPunchOut(null);
-    setBreaks([]);
-    setOnBreak(false);
-    setBreakStart(null);
-    setSummary(null);
-    setHistory([]);
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(HISTORY_KEY);
-    localStorage.removeItem(DATE_KEY);
+    requestConfirm(
+      'Clear All Data',
+      'This will permanently delete all records, including your entire work history. This action cannot be undone.',
+      () => {
+        setPunchIn(null);
+        setPunchOut(null);
+        setBreaks([]);
+        setOnBreak(false);
+        setBreakStart(null);
+        setSummary(null);
+        setHistory([]);
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(HISTORY_KEY);
+        localStorage.removeItem(DATE_KEY);
+      },
+      true
+    );
   };
 
   /* -------------------------
@@ -483,366 +603,105 @@ export default function OfficeTimeTracker() {
   const status = getStatusBadge();
   const StatusIcon = status.icon;
 
+  const pageRef = useRef(null);
+
+  useEffect(() => {
+    if (!pageRef.current) return;
+    gsap.fromTo(
+      pageRef.current,
+      { opacity: 0 },
+      { opacity: 1, duration: 0.5, ease: 'power2.out' }
+    );
+  }, []);
+
   return (
-    <div className="min-h-screen bg-pattern p-4 md:p-8">
-      <div className="max-w-4xl mx-auto stagger-children">
-        {/* Header */}
-        <div className="glass-card p-6 md:p-8 mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-[var(--text-secondary)]">{formatDateNice()}</p>
-            <span className={`badge ${status.class}`}>
-              <StatusIcon className="w-3.5 h-3.5" />
-              {status.text}
-            </span>
-          </div>
+    <div className="min-h-screen bg-pattern p-4 md:p-6 flex flex-col" ref={pageRef}>
+      <div className="max-w-4xl mx-auto flex-1 flex flex-col justify-between w-full">
+        <div className="w-full">
+          {/* Header */}
+          <ActionButtons
+            punchIn={punchIn}
+            punchOut={punchOut}
+            onBreak={onBreak}
+            onPunchIn={handlePunchIn}
+            onPunchOut={handlePunchOut}
+            onBreakIn={handleBreakIn}
+            onBreakOut={handleBreakOut}
+          />
 
-          {/* Live Clock */}
-          <div className="text-center mb-8">
-            <div className="time-display">{formatFull(now)}</div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            <button
-              onClick={handlePunchIn}
-              disabled={!!punchIn && !punchOut}
-              className="btn btn-success"
-            >
-              <LogIn className="w-6 h-6 mb-1" />
-              <span>Punch In</span>
-            </button>
-
-            <button
-              onClick={handlePunchOut}
-              disabled={!punchIn || !!punchOut}
-              className="btn btn-danger"
-            >
-              <LogOut className="w-6 h-6 mb-1" />
-              <span>Punch Out</span>
-            </button>
-
-            <button
-              onClick={handleBreakIn}
-              disabled={!punchIn || !!punchOut || onBreak}
-              className="btn btn-warning"
-            >
-              <Coffee className="w-6 h-6 mb-1" />
-              <span>Start Break</span>
-            </button>
-
-            <button
-              onClick={handleBreakOut}
-              disabled={!onBreak}
-              className="btn btn-primary"
-            >
-              <Coffee className="w-6 h-6 mb-1" />
-              <span>End Break</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Status Cards */}
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          {/* Punch Status */}
-          <div className="status-card status-card-success">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="section-title flex items-center gap-2 mb-0">
-                <LogIn className="w-4 h-4" />
-                Attendance
-              </h3>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-[var(--text-secondary)]">Punch In</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-lg">{formatShort(punchIn)}</span>
-                  {punchIn && (
-                    <button onClick={() => beginEdit({ type: 'punchIn' })} className="icon-btn">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-[var(--text-secondary)]">Punch Out</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-lg">{formatShort(punchOut)}</span>
-                  {punchOut && (
-                    <button onClick={() => beginEdit({ type: 'punchOut' })} className="icon-btn">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Break Status */}
-          <div className={`status-card ${isBreakExceeded ? 'status-card-danger' : 'status-card-warning'}`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="section-title flex items-center gap-2 mb-0">
-                <Coffee className="w-4 h-4" />
-                Break Time
-              </h3>
-              {isBreakExceeded && (
-                <span className="badge badge-danger">
-                  <AlertTriangle className="w-3 h-3" />
-                  Exceeded
-                </span>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-[var(--text-secondary)]">Allowed</span>
-                <span className="font-mono text-lg">{formatDuration(totalAllowedBreak)}</span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-[var(--text-secondary)]">Used</span>
-                <span className={`font-mono text-lg ${isBreakExceeded ? 'text-[var(--danger)]' : ''}`}>
-                  {formatDuration(totalBreakUsed)}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-[var(--text-secondary)]">
-                  {isBreakExceeded ? 'Over by' : 'Remaining'}
-                </span>
-                <span className={`font-mono text-lg font-bold ${
-                  isBreakExceeded 
-                    ? 'text-[var(--danger)]' 
-                    : breakRemainingMinutes <= 10 
-                      ? 'text-[var(--warning)]' 
-                      : 'text-[var(--success)]'
-                }`}>
-                  {isBreakExceeded ? formatDuration(exceededMinutes) : formatDuration(breakRemainingMinutes)}
-                </span>
-              </div>
-
-              {onBreak && (
-                <div className="mt-3 p-3 rounded-lg bg-[var(--warning)]/10 border border-[var(--warning)]/20">
-                  <div className="flex items-center gap-3 text-[var(--warning)]">
-                    <Timer className="w-5 h-5 animate-pulse shrink-0" />
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-semibold">On break since {formatShort(breakStart)}</span>
-                      {expectedBreakEndTime && (
-                        <div className="flex items-center gap-1.5 text-xs font-medium opacity-90">
-                          <Clock className="w-3 h-3" />
-                          <span>Expected end: {formatShort(expectedBreakEndTime)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Work Progress */}
-        {remainingCalc && (
-          <div className="status-card status-card-primary mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="section-title flex items-center gap-2 mb-0">
-                <Sparkles className="w-4 h-4" />
-                Work Progress
-              </h3>
-              <span className="text-sm text-[var(--text-muted)]">Required: {REQUIRED_WORK_HOURS}h</span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="summary-card">
-                <div className="text-xs text-[var(--text-muted)] mb-1">Completed</div>
-                <div className="font-mono text-xl font-bold text-[var(--accent-secondary)]">
-                  {formatDuration(remainingCalc.workSoFar)}
-                </div>
-              </div>
-
-              <div className="summary-card">
-                <div className="text-xs text-[var(--text-muted)] mb-1">Remaining</div>
-                <div className="font-mono text-xl font-bold text-[var(--text-primary)]">
-                  {formatDuration(remainingCalc.remaining)}
-                </div>
-              </div>
-
-              <div className="summary-card">
-                <div className="text-xs text-[var(--text-muted)] mb-1">Est. End</div>
-                <div className="font-mono text-xl font-bold text-[var(--success)]">
-                  {formatShort(remainingCalc.estimatedEnd)}
-                </div>
-              </div>
-            </div>
-
-            <div className="progress-track">
-              <div
-                className="progress-fill"
-                style={{ width: `${Math.min((remainingCalc.workSoFar / requiredMinutes) * 100, 100)}%` }}
-              />
-            </div>
-            <div className="flex justify-between mt-2 text-xs text-[var(--text-muted)]">
-              <span>0h</span>
-              <span className="font-medium text-[var(--accent-secondary)]">
-                {Math.round((remainingCalc.workSoFar / requiredMinutes) * 100)}%
-              </span>
-              <span>{REQUIRED_WORK_HOURS}h</span>
-            </div>
-          </div>
-        )}
+        {/* Unified Status Card */}
+        <StatusCard
+          punchIn={punchIn}
+          punchOut={punchOut}
+          totalAllowedBreak={totalAllowedBreak}
+          totalBreakUsed={totalBreakUsed}
+          isBreakExceeded={isBreakExceeded}
+          breakRemainingMinutes={breakRemainingMinutes}
+          exceededMinutes={exceededMinutes}
+          beginEdit={beginEdit}
+        />
 
         {/* Break Sessions */}
-        <div className="glass-card p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-title flex items-center gap-2 mb-0">
-              <Coffee className="w-4 h-4" />
-              Break Sessions
-            </h3>
-            <span className="text-sm text-[var(--text-muted)]">{breaks.length} recorded</span>
-          </div>
+        <BreakSessions
+          breaks={breaks}
+          onBreak={onBreak}
+          breakStart={breakStart}
+          now={now}
+          expectedBreakEndTime={expectedBreakEndTime}
+          beginEdit={beginEdit}
+          deleteBreak={deleteBreak}
+        />
 
-          {breaks.length === 0 ? (
-            <div className="text-center py-8 text-[var(--text-muted)]">
-              <Coffee className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>No breaks recorded yet</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {breaks.map((b, i) => (
-                <div key={i} className="break-item">
-                  <div className="flex items-center gap-4">
-                    <span className="w-6 h-6 rounded-full bg-[var(--accent-primary)]/20 text-[var(--accent-secondary)] text-xs font-bold flex items-center justify-center">
-                      {i + 1}
-                    </span>
-                    <div className="flex items-center gap-2 font-mono">
-                      <span>{formatShort(b.start)}</span>
-                      <span className="text-[var(--text-muted)]">→</span>
-                      <span>{formatShort(b.end)}</span>
-                    </div>
-                    <span className="badge badge-warning">{formatDuration(b.minutes)}</span>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => beginEdit({ type: 'break', index: i, field: 'start' })} className="icon-btn">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => beginEdit({ type: 'break', index: i, field: 'end' })} className="icon-btn">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => deleteBreak(i)} className="icon-btn icon-btn-danger">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Edit Modal Popup */}
-        {editMode && (
-          <div className="modal-overlay" onClick={cancelEdit}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-bold text-[var(--text-primary)]">Edit Time</h3>
-                  <p className="text-sm text-[var(--text-muted)] mt-1">
-                    {editMode.type === 'punchIn' && 'Punch In Time'}
-                    {editMode.type === 'punchOut' && 'Punch Out Time'}
-                    {editMode.type === 'break' && `Break ${editMode.index + 1} - ${editMode.field === 'start' ? 'Start' : 'End'} Time`}
-                  </p>
-                </div>
-                <button onClick={cancelEdit} className="modal-close-btn">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                  Select Time
-                </label>
-                <input
-                  type="time"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  autoFocus
-                  className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl font-mono text-2xl text-center focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-glow)] transition-all"
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button onClick={cancelEdit} className="flex-1 px-4 py-3 rounded-xl border border-[var(--border)] text-[var(--text-secondary)] font-medium hover:bg-[var(--bg-card)] transition-all">
-                  Cancel
-                </button>
-                <button onClick={saveEdit} className="flex-1 btn btn-success py-3 flex-row gap-2">
-                  <Check className="w-5 h-5" />
-                  <span>Save Changes</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Work Progress */}
+        <WorkProgress remainingCalc={remainingCalc} requiredMinutes={REQUIRED_WORK_HOURS * 60} />
 
         {/* Day Summary */}
-        {summary && (
-          <div className="glass-card p-6 mb-6">
-            <h3 className="section-title flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              Day Summary
-            </h3>
+        <DaySummary
+          summary={summary}
+          totalAllowedBreak={totalAllowedBreak}
+          requiredWorkHours={REQUIRED_WORK_HOURS}
+        />
 
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="summary-card">
-                <div className="text-xs text-[var(--text-muted)] mb-1">Office Time</div>
-                <div className="font-mono text-xl font-bold">{formatDuration(summary.totalOfficeMinutes)}</div>
-              </div>
 
-              <div className="summary-card">
-                <div className="text-xs text-[var(--text-muted)] mb-1">Break Time</div>
-                <div className={`font-mono text-xl font-bold ${summary.breakMinutes > totalAllowedBreak ? 'text-[var(--danger)]' : 'text-[var(--warning)]'}`}>
-                  {formatDuration(summary.breakMinutes)}
-                </div>
-              </div>
 
-              <div className="summary-card">
-                <div className="text-xs text-[var(--text-muted)] mb-1">Work Time</div>
-                <div className={`font-mono text-xl font-bold ${summary.totalWork >= summary.requiredMinutes ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
-                  {formatDuration(summary.totalWork)}
-                </div>
-              </div>
-            </div>
 
-            <div className={`p-4 rounded-xl text-center ${
-              summary.totalWork >= summary.requiredMinutes 
-                ? 'bg-[var(--success)]/10 border border-[var(--success)]/20' 
-                : 'bg-[var(--danger)]/10 border border-[var(--danger)]/20'
-            }`}>
-              {summary.totalWork >= summary.requiredMinutes ? (
-                <div className="flex items-center justify-center gap-2 text-[var(--success)] font-semibold">
-                  <CheckCircle2 className="w-5 h-5" />
-                  Required {REQUIRED_WORK_HOURS} hours completed!
-                </div>
-              ) : (
-                <div className="flex items-center justify-center gap-2 text-[var(--danger)] font-semibold">
-                  <AlertTriangle className="w-5 h-5" />
-                  Short by {formatDuration(summary.requiredMinutes - summary.totalWork)}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
+        </div>
 
         {/* Footer Actions */}
-        <div className="flex justify-center gap-3">
-          <button onClick={clearToday} className="clear-btn">
-            Clear Today
-          </button>
-          <button onClick={clearAll} className="clear-btn clear-btn-danger">
-            Clear All Data
+        <div className="flex justify-center gap-3 mt-6">
+          {onNavigateHistory && (
+            <button
+              onClick={onNavigateHistory}
+              className="clear-btn whitespace-nowrap"
+            >
+              History
+            </button>
+          )}
+          <button
+            onClick={clearToday}
+            className="clear-btn whitespace-nowrap"
+          >
+            Reset
           </button>
         </div>
+
+        <EditModal
+          editMode={editMode}
+          editValue={editValue}
+          pickerTab={pickerTab}
+          pickerHour={pickerHour}
+          pickerMinute={pickerMinute}
+          setEditValue={setEditValue}
+          saveEdit={saveEdit}
+          cancelEdit={cancelEdit}
+          setPickerTab={setPickerTab}
+          togglePeriod={togglePeriod}
+          formatSelectedTime={formatSelectedTime}
+          muiDarkTheme={muiDarkTheme}
+        />
+
+        <ConfirmModal confirmAction={confirmAction} setConfirmAction={setConfirmAction} />
+        <ToastContainer toasts={toast.toasts} />
       </div>
     </div>
   );
