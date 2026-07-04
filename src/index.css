@@ -1,5 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --font-weight-bold: 600;
+  --font-weight-semibold: 500;
+  --font-weight-medium: 400;
+}
 
 :root {
   --bg-primary: #0a0a0f;
@@ -17,7 +23,7 @@
   --danger-glow: rgba(239, 68, 68, 0.3);
   --text-primary: #ffffff;
   --text-secondary: #e2e8f0;
-  --text-muted: #94a3b8;
+  --text-muted: #cbd5e1;
   --border: rgba(255, 255, 255, 0.08);
   --border-hover: rgba(255, 255, 255, 0.15);
 }
@@ -31,7 +37,7 @@ html {
 }
 
 body {
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Inter', sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
@@ -42,7 +48,7 @@ body {
 }
 
 .font-mono {
-  font-family: 'Roboto', sans-serif !important;
+  font-family: 'Inter', sans-serif !important;
   font-variant-numeric: tabular-nums;
 }
 
@@ -72,7 +78,7 @@ body {
   justify-content: center;
   padding: 1rem 1.5rem;
   border-radius: 6px;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.875rem;
   letter-spacing: 0.025em;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -246,7 +252,7 @@ body {
 .time-display {
   font-family: 'JetBrains Mono', monospace;
   font-size: clamp(2.2rem, 10vw, 4.2rem);
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
 }
@@ -334,10 +340,10 @@ body {
 
 /* Section title */
 .section-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
   margin-bottom: 1rem;
 }
 
@@ -349,7 +355,7 @@ body {
   padding: 0.15rem 0.45rem;
   border-radius: 6px;
   font-size: 0.7rem;
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
 }
 
@@ -615,7 +621,7 @@ body {
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 400;
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text-secondary);
@@ -691,10 +697,10 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
   margin-bottom: 0.875rem;
   padding-bottom: 0.5rem;
 }
@@ -715,7 +721,7 @@ body {
   padding: 0.625rem 1rem;
   text-align: left;
   font-size: 0.65rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.1em;
   color: var(--text-muted);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -757,7 +763,7 @@ body {
   background: rgba(99, 102, 241, 0.15);
   color: var(--accent-secondary);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -814,7 +820,7 @@ body {
   padding: 0.75rem 1.25rem;
   border-radius: 10px;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 400;
   font-family: 'Plus Jakarta Sans', sans-serif;
   pointer-events: auto;
   backdrop-filter: blur(12px);
