@@ -43,7 +43,7 @@ export default function BreakSessions({
   }, [onBreak]);
 
   const currentBreakMinutes = onBreak ? minutesBetween(breakStart, now) : 0;
-  const currentTotalUsed = totalBreakUsed + currentBreakMinutes;
+  const currentTotalUsed = totalBreakUsed;
 
   return (
     <div className="glass-card mb-6 gsap-section">
