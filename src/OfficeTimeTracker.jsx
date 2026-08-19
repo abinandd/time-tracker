@@ -88,6 +88,34 @@ import {
 } from './utils';
 
 /* =========================
+   CUSTOM JOYRIDE TOOLTIP
+   ========================= */
+const CustomTooltip = ({
+  step,
+  primaryProps,
+  tooltipProps,
+}) => {
+  return (
+    <div {...tooltipProps} className="bg-[var(--bg-card)] border border-[var(--border)] flex flex-col p-5 w-[300px] rounded-xl shadow-2xl relative z-[10001]">
+      <div className="flex items-center gap-2.5 mb-2.5">
+        <div className="p-1.5 bg-[rgba(16,185,129,0.1)] rounded-md">
+          <Sparkles className="w-4 h-4 text-[#10b981]" />
+        </div>
+        <h4 className="font-semibold text-[var(--text-primary)] text-[13px]">New Feature</h4>
+      </div>
+      <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-4">
+        {step.content}
+      </p>
+      <div className="flex justify-end mt-1">
+        <button {...primaryProps} className="px-4 py-1.5 bg-[rgba(16,185,129,0.1)] hover:bg-[rgba(16,185,129,0.2)] border border-[rgba(16,185,129,0.2)] text-[#10b981] text-xs font-semibold rounded-full transition-all cursor-pointer">
+          Got it
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/* =========================
    COMPONENT
    ========================= */
 export default function OfficeTimeTracker({ onNavigateHistory }) {
@@ -113,7 +141,7 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
   const [tourSteps] = useState([
     {
       target: '.active-break-start-btn',
-      content: 'You can now click here to edit the start time of your active break!',
+      content: 'Click the start time to easily adjust when you began your break.',
       disableBeacon: true,
       placement: 'bottom',
     },
@@ -677,17 +705,12 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
         disableOverlayClose={false}
         disableCloseOnEsc={false}
         callback={handleJoyrideCallback}
+        tooltipComponent={CustomTooltip}
         styles={{
           options: {
             zIndex: 10000,
-            arrowColor: '#18181b',
-            backgroundColor: '#18181b',
+            arrowColor: '#1a1a24',
             overlayColor: 'rgba(0, 0, 0, 0.4)',
-            primaryColor: '#10b981',
-            textColor: '#f4f4f5',
-          },
-          tooltipContainer: {
-            textAlign: 'left',
           }
         }}
       />
