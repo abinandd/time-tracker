@@ -256,9 +256,9 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
   }, [onBreak]);
 
   const handleJoyrideCallback = (data) => {
-    const { status } = data;
+    const { status, action, type } = data;
     const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
-    if (finishedStatuses.includes(status)) {
+    if (finishedStatuses.includes(status) || action === 'close' || type === 'tour:end') {
       localStorage.setItem('hasSeenActiveBreakTour', 'true');
       setRunTour(false);
     }
