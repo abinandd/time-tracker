@@ -29,6 +29,7 @@ import StatusCard from './components/StatusCard';
 import ConfirmModal from './components/ConfirmModal';
 import EditModal from './components/EditModal';
 import { useToast, ToastContainer } from './components/Toast';
+import { Joyride, STATUS } from 'react-joyride';
 
 const muiDarkTheme = createTheme({
   palette: {
@@ -107,6 +108,16 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
   const [pickerMinute, setPickerMinute] = useState(0);
   const [pickerPeriod, setPickerPeriod] = useState('AM');
   const [pickerTab, setPickerTab] = useState('hour');
+
+  const [runTour, setRunTour] = useState(false);
+  const [tourSteps] = useState([
+    {
+      target: '.active-break-start-btn',
+      content: 'You can now click here to edit the start time of your active break!',
+      disableBeacon: true,
+      placement: 'bottom',
+    },
+  ]);
 
   useEffect(() => {
     if (editValue && editValue.includes(':')) {
@@ -203,6 +214,27 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
     const id = setInterval(check, 60 * 1000);
     return () => clearInterval(id);
   }, []);
+
+  /* -------------------------
+     Joyride feature tour
+     ------------------------- */
+  useEffect(() => {
+    if (onBreak) {
+      const hasSeenTour = localStorage.getItem('hasSeenActiveBreakTour');
+      if (!hasSeenTour) {
+        setTimeout(() => setRunTour(true), 600); // slight delay to allow the break UI animation to finish
+      }
+    }
+  }, [onBreak]);
+
+  const handleJoyrideCallback = (data) => {
+    const { status } = data;
+    const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (finishedStatuses.includes(status)) {
+      localStorage.setItem('hasSeenActiveBreakTour', 'true');
+      setRunTour(false);
+    }
+  };
 
   /* -------------------------
      Disable page scroll when time editor modal is open
@@ -638,6 +670,27 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
 
   return (
     <div className="min-h-screen bg-pattern p-4 md:p-6 flex flex-col" ref={pageRef}>
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous={true}
+        disableOverlayClose={false}
+        disableCloseOnEsc={false}
+        callback={handleJoyrideCallback}
+        styles={{
+          options: {
+            zIndex: 10000,
+            arrowColor: '#18181b',
+            backgroundColor: '#18181b',
+            overlayColor: 'rgba(0, 0, 0, 0.4)',
+            primaryColor: '#10b981',
+            textColor: '#f4f4f5',
+          },
+          tooltipContainer: {
+            textAlign: 'left',
+          }
+        }}
+      />
       <div className="max-w-4xl mx-auto flex-1 flex flex-col justify-between w-full">
         <div className="w-full">
           {/* Header */}
