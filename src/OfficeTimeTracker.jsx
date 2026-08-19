@@ -415,6 +415,8 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
     else if (payload.type === 'break' && typeof payload.index === 'number') {
       const br = breaks[payload.index];
       setEditValue(formatTimeForInput(payload.field === 'start' ? br.start : br.end));
+    } else if (payload.type === 'activeBreakStart' && breakStart) {
+      setEditValue(formatTimeForInput(breakStart));
     } else setEditValue('');
   };
 
@@ -468,6 +470,9 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
         return copy;
       });
       if (punchIn && punchOut) setSummary(computeSummaryObject(punchIn, punchOut, breaks));
+    } else if (editMode.type === 'activeBreakStart') {
+      const newDate = parseInputToDate(editValue, breakStart || new Date());
+      setBreakStart(newDate);
     }
 
     cancelEdit();

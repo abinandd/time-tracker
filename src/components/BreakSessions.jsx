@@ -82,7 +82,13 @@ export default function BreakSessions({
               </div>
               <div className="flex flex-col">
                 <span className="text-[var(--text-muted)] text-[10.5px] font-medium mb-0.5">Started At</span>
-                <span className="font-medium text-[var(--text-primary)]">{formatShort(breakStart)}</span>
+                <button
+                  onClick={() => beginEdit({ type: 'activeBreakStart' })}
+                  className="font-medium text-[var(--text-primary)] hover:text-[var(--accent-primary)] hover:underline cursor-pointer bg-transparent border-none p-0 focus:outline-none transition-colors text-left text-xs"
+                  title="Click to edit Active Break Start time"
+                >
+                  {formatShort(breakStart)}
+                </button>
               </div>
             </div>
           </div>
