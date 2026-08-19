@@ -257,8 +257,10 @@ export default function OfficeTimeTracker({ onNavigateHistory }) {
 
   const handleJoyrideCallback = (data) => {
     const { status, action, type } = data;
+    console.log("Joyride callback data:", data);
     const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
-    if (finishedStatuses.includes(status) || action === 'close' || type === 'tour:end') {
+    if (finishedStatuses.includes(status) || ['close', 'next', 'skip'].includes(action) || type === 'tour:end') {
+      console.log("Joyride completed. Setting 'hasSeenActiveBreakTour' in localStorage to 'true'");
       localStorage.setItem('hasSeenActiveBreakTour', 'true');
       setRunTour(false);
     }
